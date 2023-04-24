@@ -1,6 +1,3 @@
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.Json;
-
 var builder = WebApplication.CreateBuilder(args);
 
 #region Swagger
@@ -23,7 +20,10 @@ builder.Services.AddSwaggerGen();
 
 #region 方案1
 
-var app = builder.AddServices();
+var app = builder.AddServices(options =>
+{
+    // options.MapHttpMethodsForUnmatched = new[] { "Post" };//全局更改：匹配失败后默认使用Post
+});
 
 #endregion
 

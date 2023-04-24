@@ -1,4 +1,4 @@
-﻿namespace Assignment_MinimalAPI.Request;
+﻿namespace Assignment_MinimalAPI.Requests;
 
 public class CreateTodoRequest
 {

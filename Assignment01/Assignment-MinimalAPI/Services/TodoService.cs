@@ -1,5 +1,5 @@
 ﻿using Assignment_MinimalAPI.Models;
-using Assignment_MinimalAPI.Request;
+using Assignment_MinimalAPI.Requests;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Assignment_MinimalAPI.Services;
@@ -15,6 +15,11 @@ public class TodoService : ServiceBase
             Done = false,
         }
     };
+
+    /// <summary>
+    /// 获取日志服务
+    /// </summary>
+    // private ILogger<TodoService> _logger => GetRequiredService<ILogger<TodoService>>();
 
     public Task<List<TodoItem>> GetListAsync()
     {
