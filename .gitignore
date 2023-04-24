@@ -2,3 +2,8 @@
 */*/.vs/
 */*/bin/
 */*/obj/
+/*/*/*/bin/
+/*/*/*/obj/
+*.db-wal
+*.db
+*.db-shm

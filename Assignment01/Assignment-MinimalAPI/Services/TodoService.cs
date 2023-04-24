@@ -1,6 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Assignment_MinimalAPI.Models;
+﻿using Assignment_MinimalAPI.Models;
 using Assignment_MinimalAPI.Request;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Assignment_MinimalAPI.Services;
 
@@ -54,7 +54,7 @@ public class TodoService : ServiceBase
     public Task DoneAsync(int id)
     {
         ParseValidate(id, out var todoItem);
-        
+
         todoItem.Done = true;
         return Task.CompletedTask;
     }
