@@ -1,13 +1,13 @@
 # 帮助
 
-1. 模型迁移 
+1. model migration（模型迁移） 
 
 ```shell
 dotnet ef migrations add InitialCreate
 ```
 
-2. 更新数据库
+2. update database（更新数据库）
 
-```shell
+```powershell
 dotnet ef database update
 ```

@@ -2,7 +2,7 @@
 
 public class AddTodoRequest
 {
-    public string Title { get; set; }
+    public string Title { get; set; } = default!;
 
-    public string Describe { get; set; }
+    public string? Describe { get; set; }
 }

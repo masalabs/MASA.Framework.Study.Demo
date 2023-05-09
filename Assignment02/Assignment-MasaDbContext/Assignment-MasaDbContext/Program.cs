@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMasaDbContext<TodoDbContext>(dbContextBuilder =>
 {
-    dbContextBuilder.UseSqlite("Data Source=todo.db;");
+    dbContextBuilder.UseSqlite();
     dbContextBuilder.UseFilter();
 });
 
@@ -30,14 +30,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("get", (
-    [FromServices] TodoDbContext context,
-    int id) =>
-{
-    return context.Set<TodoItem>().FirstOrDefaultAsync(t => t.Id == id);
-});
+#region TodoList
 
-app.MapGet("list", (
+app.MapGet("todo/list", (
     TodoDbContext context,
     int page,
     int pageSize) =>
@@ -46,7 +41,7 @@ app.MapGet("list", (
     return list;
 });
 
-app.MapGet("/recycle/list", (
+app.MapGet("todo/recycle/list", (
     [FromServices] TodoDbContext context,
     [FromServices] IDataFilter dataFilter,
     int page,
@@ -59,7 +54,7 @@ app.MapGet("/recycle/list", (
     }
 });
 
-app.MapPost("add", async ([FromServices] TodoDbContext context, [FromBody] AddTodoRequest request) =>
+app.MapPost("todo", async ([FromServices] TodoDbContext context, [FromBody] AddTodoRequest request) =>
 {
     var todo = new TodoItem()
     {
@@ -71,15 +66,28 @@ app.MapPost("add", async ([FromServices] TodoDbContext context, [FromBody] AddTo
     return Results.Accepted();
 });
 
-app.MapDelete("delete", async ([FromServices] TodoDbContext context, [FromBody] DeleteTodoRequest request) =>
+app.MapPut("todo/done/{id}", async ([FromServices] TodoDbContext context, int id) =>
 {
-    var todoInfo = await context.Set<TodoItem>().AsTracking().FirstOrDefaultAsync(t => t.Id == request.Id);
-    if (todoInfo == null)
-        throw new Exception("该事项不存在");
+    var todoInfo = await context.Set<TodoItem>().AsTracking().FirstOrDefaultAsync(t => t.Id == id);
+    ArgumentNullException.ThrowIfNull(todoInfo);
+    
+    todoInfo.Done = true;
+    
+    context.Set<TodoItem>().Update(todoInfo);
+    await context.SaveChangesAsync();
+    return Results.Accepted();
+});
+
+app.MapDelete("todo/{id}", async ([FromServices] TodoDbContext context, int id) =>
+{
+    var todoInfo = await context.Set<TodoItem>().AsTracking().FirstOrDefaultAsync(t => t.Id == id);
+    ArgumentNullException.ThrowIfNull(todoInfo);
 
     context.Set<TodoItem>().Remove(todoInfo);
     await context.SaveChangesAsync();
     return Results.Accepted();
 });
+
+#endregion
 
 app.Run();

@@ -5,11 +5,11 @@ namespace Assignment_MasaDbContext.Infrastructure;
 // public class TodoDbContext : MasaDbContext
 public class TodoDbContext : MasaDbContext<TodoDbContext>
 {
+    // public DbSet<TodoItem> Todo { get; set; }
+    
     public TodoDbContext(MasaDbContextOptions<TodoDbContext> options) : base(options)
     {
     }
-
-    // public DbSet<TodoItem> Todo { get; set; }
 
     #region 模型映射
 
