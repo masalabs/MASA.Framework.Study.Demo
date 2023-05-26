@@ -6,6 +6,7 @@ using Masa.BuildingBlocks.Caching;
 using Masa.BuildingBlocks.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,9 +14,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMasaDbContext<TodoDbContext>(dbContextBuilder =>
 {
-    dbContextBuilder.UseSqlite();
+    dbContextBuilder.UseSqlServer();
     dbContextBuilder.UseFilter();
 });
+
+// thread safe class
+
+builder.Services.AddSingleton<CustomOptionsCache>();
+builder.Services.AddTransient<CustomOptionsManager>();
 
 // Register multilevel cache
 
@@ -41,6 +47,93 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+#region benchmark
+
+app.MapGet("/benchmark/redirect", () =>
+{
+    return new TodoItemResponse()
+    {
+        Id = 1,
+        Title = "string",
+        Describe = "string",
+        Done = false
+    };
+});
+
+app.MapGet("benchmark/multilevel_cache/{id}", async (
+    IServiceProvider serviceProvider,
+    int id) =>
+{
+    var multilevelCacheClient = serviceProvider.GetRequiredService<IMultilevelCacheClient>();
+    TimeSpan? memoryTimeSpan = null;
+    var todoInfo = await multilevelCacheClient.GetOrSetAsync(id.ToString(), async () =>
+    {
+        var context = serviceProvider.GetService<TodoDbContext>();
+        var todoInfo = await context.Set<TodoItem>().Select(t => new TodoItemResponse()
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Describe = t.Describe,
+            Done = t.Done
+        }).FirstOrDefaultAsync(t => t.Id == id);
+
+        if (todoInfo != null)
+        {
+            memoryTimeSpan = TimeSpan.FromSeconds(300); //Set the memory cache expiration time to expire after 1 minute
+            return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromDays(1)); //Set the distributed cache expiration time to expire after 1 day
+        }
+        memoryTimeSpan = TimeSpan.FromSeconds(15); //Set the memory cache expiration time to expire after 15 second
+        return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromMinutes(30)); //Set the memory cache expiration time to expire after 30 minutes
+    }, memoryCacheOptions =>
+    {
+        memoryCacheOptions.AbsoluteExpirationRelativeToNow = memoryTimeSpan;
+    });
+    return todoInfo;
+});
+
+app.MapGet("benchmark/distribute_cache/{id}", async (
+    IServiceProvider serviceProvider,
+    int id) =>
+{
+    var distributedCacheClient = serviceProvider.GetRequiredService<IDistributedCacheClient>();
+    var todoInfo = await distributedCacheClient.GetOrSetAsync(id.ToString(), async () =>
+    {
+        var context = serviceProvider.GetService<TodoDbContext>();
+        var todoInfo = await context.Set<TodoItem>().Select(t => new TodoItemResponse()
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Describe = t.Describe,
+            Done = t.Done
+        }).FirstOrDefaultAsync(t => t.Id == id);
+
+        if (todoInfo != null)
+        {
+            return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromDays(1)); //Set the distributed cache expiration time to expire after 1 day
+        }
+        return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromMinutes(30)); //Set the memory cache expiration time to expire after 30 minutes
+    });
+    return todoInfo;
+});
+
+app.MapGet("benchmark/database/{id}", async (
+    IServiceProvider serviceProvider,
+    int id) =>
+{
+    var context = serviceProvider.GetService<TodoDbContext>();
+    var todoInfo = await context.Set<TodoItem>().Select(t => new TodoItemResponse()
+    {
+        Id = t.Id,
+        Title = t.Title,
+        Describe = t.Describe,
+        Done = t.Done
+    }).FirstOrDefaultAsync(t => t.Id == id);
+
+    return todoInfo;
+});
+
+#endregion
+
 #region TodoList
 
 app.MapGet("todo/{id}", async (
@@ -64,8 +157,8 @@ app.MapGet("todo/{id}", async (
             memoryTimeSpan = TimeSpan.FromSeconds(60); //Set the memory cache expiration time to expire after 1 minute
             return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromDays(1)); //Set the distributed cache expiration time to expire after 1 day
         }
-        memoryTimeSpan = TimeSpan.FromSeconds(15);//Set the memory cache expiration time to expire after 15 second
-        return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromMinutes(30));//Set the memory cache expiration time to expire after 30 minutes
+        memoryTimeSpan = TimeSpan.FromSeconds(15); //Set the memory cache expiration time to expire after 15 second
+        return new CacheEntry<TodoItemResponse>(todoInfo, TimeSpan.FromMinutes(30)); //Set the memory cache expiration time to expire after 30 minutes
     }, memoryCacheOptions =>
     {
         memoryCacheOptions.AbsoluteExpirationRelativeToNow = memoryTimeSpan;
@@ -153,6 +246,15 @@ app.MapDelete("todo/{id}", async (
     await multilevelCacheClient.RemoveAsync<TodoItemResponse>(id.ToString());
 
     return Results.Accepted();
+});
+
+#endregion
+
+#region thread safe class
+
+app.MapGet("/threadsafe", (CustomOptionsManager customOptionsManager) =>
+{
+    return customOptionsManager.GetValue("ConnectionStrings:DefaultConnection");
 });
 
 #endregion

@@ -8,10 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Masa.Contrib.Caching.Distributed.StackExchangeRedis" Version="1.0.0-rc.2" />
-        <PackageReference Include="Masa.Contrib.Caching.MultilevelCache" Version="1.0.0-rc.2" />
-        <PackageReference Include="Masa.Contrib.Data.Contracts" Version="1.0.0-rc.2" />
-        <PackageReference Include="Masa.Contrib.Data.EFCore.Sqlite" Version="1.0.0-rc.2" />
+        <PackageReference Include="Masa.Contrib.Caching.Distributed.StackExchangeRedis" Version="1.0.0-rc.2.1" />
+        <PackageReference Include="Masa.Contrib.Caching.MultilevelCache" Version="1.0.0-rc.2.1" />
+        <PackageReference Include="Masa.Contrib.Data.Contracts" Version="1.0.0-rc.2.1" />
+        <PackageReference Include="Masa.Contrib.Data.EFCore.SqlServer" Version="1.0.0-rc.2.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.16">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
